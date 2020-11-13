@@ -18,13 +18,11 @@ param
 
 Write-Output "Set Out Of Office settings initialized by $CallerName for $UserPrincipalName"
 
-$Credentials = Get-AutomationPSCredential -Name "svcAccount"
-$ConnectionUri = "https://outlook.office365.com/PowerShell/"
-
-$Error.Clear();
-$AuthScheme = "Kerberos"
-$PSSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $ConnectionUri -Authentication $AuthScheme -Credential $Credentials -AllowRedirection
-Import-PSSession $PSSession -CommandName Set-MailboxAutoReplyConfiguration, Get-MailboxAutoReplyConfiguration -AllowClobber:$true
+$Connection = Get-AutomationConnection -Name 'AzureRunAsConnection'
+Connect-AzAccount @Connection -ServicePrincipal
+ 
+$TenantName = "c4a8.onmicrosoft.com" # Get-AutomationVariable -Name 'tbd'
+Connect-ExchangeOnline -CertificateThumbprint $Connection.CertificateThumbprint -AppId $Connection.ApplicationId -Organization $TenantName
 
 if (!$Error) {
     Write-Output "Connection to Exchange Online Powershell established!"    
@@ -57,5 +55,5 @@ else {
     Write-Error "Connection to Exchange Online failed! `r`n $Error"
 }
 
-Remove-PSSession $PSSession
-Write-Host "script ended."
+Disconnect-ExchangeOnline
+Write-Host "script ended." 
